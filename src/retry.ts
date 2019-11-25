@@ -24,22 +24,30 @@ export interface RetryOpts {
  */
 export function retry<T extends Function>(fn: T, retryOpts: RetryOpts): T {
   // tslint:disable-next-line:no-any (casting as any to preserve original function type)
-  return ((async (...args: any[]): Promise<any> => {
+  return (((...args: any[]): Promise<any> => {
     let lastErr: Error = new Error(`Could not complete function within ${retryOpts.maxAttempts}`);
-    for (let i = 0; i < retryOpts.maxAttempts; ++i) {
-      try {
-        return await fn(...args);
-      } catch (err) {
+    // tslint:disable-next-line:no-any (casting as any to preserve original function type)
+    const tryCall = (i: number = 0): Promise<any> => {
+      if (i >= retryOpts.maxAttempts) {
+        return Promise.reject(lastErr);
+      }
+
+      return new Promise(resolve => resolve(fn(...args))).catch(err => {
         if (retryOpts.isRetryable && !retryOpts.isRetryable(err)) {
           throw err;
         }
+
         lastErr = err;
-      }
-      if (retryOpts.delayMs) {
-        await delay(retryOpts.delayMs);
-      }
-    }
-    throw lastErr;
+
+        if (retryOpts.delayMs) {
+          return Promise.resolve(delay(retryOpts.delayMs)).then(() => tryCall(i + 1));
+        }
+
+        return tryCall(i + 1);
+      });
+    };
+
+    return tryCall();
     // tslint:disable-next-line:no-any (casting as any to preserve original function type)
   }) as any) as T;
 }

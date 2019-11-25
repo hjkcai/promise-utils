@@ -14,46 +14,50 @@ export interface SettledPromises<T, V> {
  *
  * @returns A list of resolved and rejected values of promises.
  */
-export async function settleAll<T, V>(
+export function settleAll<T, V>(
   promises: readonly Promise<T>[],
   // tslint:disable-next-line:no-any (no way to guarantee error typings)
   errFn?: (err: any, ind: number) => Promise<V>,
 ): Promise<SettledPromises<T, V>>;
-export async function settleAll<T, V>(
+export function settleAll<T, V>(
   promises: readonly Promise<T>[],
   // tslint:disable-next-line:no-any (no way to guarantee error typings)
   errFn?: (err: any) => Promise<V>,
 ): Promise<SettledPromises<T, V>>;
-export async function settleAll<T, V>(
+export function settleAll<T, V>(
   promises: readonly Promise<T>[],
   // tslint:disable-next-line:no-any (no way to guarantee error typings)
   errFn?: (err: any, ind: number) => V,
 ): Promise<SettledPromises<T, V>>;
-export async function settleAll<T, V>(
+export function settleAll<T, V>(
   promises: readonly Promise<T>[],
   // tslint:disable-next-line:no-any (no way to guarantee error typings)
   errFn?: (err: any) => V,
 ): Promise<SettledPromises<T, V>>;
-export async function settleAll<T, V>(
+export function settleAll<T, V>(
   promises: readonly Promise<T>[],
   // tslint:disable-next-line:no-any (no way to guarantee error typings)
   errFn: (err: any, ind: number) => V = err => err,
 ): Promise<SettledPromises<T, V>> {
-  const intermediateResults: { errors?: V; results?: T }[] = await Promise.all(
-    (promises || []).map(async (p, i) => {
-      try {
-        return { results: await p };
-      } catch (err) {
-        return { errors: await errFn(err, i) };
-      }
+  const intermediate: Promise<{ errors?: V; results?: T }[]> = Promise.all(
+    (promises || []).map((p, i) => {
+      return Promise.resolve(p)
+        .then(results => ({ results }))
+        .catch(err =>
+          new Promise<V>(resolve => resolve(errFn(err, i))).then(errors => ({ errors })),
+        );
     }),
   );
-  const settledPromises: SettledPromises<T, V> = { results: [], errors: [] };
-  for (const result of intermediateResults) {
-    for (const key in result) {
-      // @ts-ignore typings line up, but typescript is hard pressed to agree
-      settledPromises[key].push(result[key]);
-    }
-  }
-  return settledPromises;
+
+  return intermediate.then(intermediateResults => {
+    const settledPromises: SettledPromises<T, V> = { results: [], errors: [] };
+    intermediateResults.forEach(result => {
+      for (const key in result) {
+        // @ts-ignore typings line up, but typescript is hard pressed to agree
+        settledPromises[key].push(result[key]);
+      }
+    });
+
+    return settledPromises;
+  });
 }

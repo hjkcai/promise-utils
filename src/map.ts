@@ -20,24 +20,21 @@ const DEFAULT_MAP_PARALLELISM = 10;
  * @param {AsyncFunction} iteratee - An async function to apply to each item in coll. The iteratee
  *     should return the transformed item. Invoked with (item, key).
  */
-export async function map<T, V>(
+export function map<T, V>(
   input: readonly T[],
   iteratee: (value: T, index: number) => Promise<V>,
 ): Promise<V[]>;
-export async function map<T, V>(
-  input: readonly T[],
-  iteratee: (value: T) => Promise<V>,
-): Promise<V[]>;
-export async function map<T extends Object, V>(
+export function map<T, V>(input: readonly T[], iteratee: (value: T) => Promise<V>): Promise<V[]>;
+export function map<T extends Object, V>(
   input: T,
   iteratee: (value: T[keyof T], key: string) => Promise<V>,
 ): Promise<V[]>;
-export async function map<T extends Object, V>(
+export function map<T extends Object, V>(
   input: T,
   iteratee: (value: T[keyof T]) => Promise<V>,
 ): Promise<V[]>;
 // tslint:disable-next-line:no-any (types are enforced by overload signatures, validated by tests)
-export async function map(input: any, iteratee: any): Promise<any[]> {
+export function map(input: any, iteratee: any): Promise<any[]> {
   return mapLimit(input, DEFAULT_MAP_PARALLELISM, iteratee);
 }
 
@@ -50,30 +47,30 @@ export async function map(input: any, iteratee: any): Promise<any[]> {
  * @param {AsyncFunction} iteratee - An async function to apply to each item in coll. The iteratee
  *     should complete with the transformed item. Invoked with (item, key).
  */
-export async function mapLimit<T, V>(
+export function mapLimit<T, V>(
   input: readonly T[],
   limit: number,
   iteratee: (value: T, index: number) => Promise<V>,
 ): Promise<V[]>;
-export async function mapLimit<T, V>(
+export function mapLimit<T, V>(
   input: readonly T[],
   limit: number,
   iteratee: (value: T) => Promise<V>,
 ): Promise<V[]>;
-export async function mapLimit<T extends Object, V>(
+export function mapLimit<T extends Object, V>(
   input: T,
   limit: number,
   iteratee: (value: T[keyof T], key: string) => Promise<V>,
 ): Promise<V[]>;
-export async function mapLimit<T extends Object, V>(
+export function mapLimit<T extends Object, V>(
   input: T,
   limit: number,
   iteratee: (value: T[keyof T]) => Promise<V>,
 ): Promise<V[]>;
 // tslint:disable-next-line:no-any (types are enforced by overload signatures, validated by tests)
-export async function mapLimit<V>(input: any, limit: number, iteratee: any): Promise<V[]> {
+export function mapLimit<V>(input: any, limit: number, iteratee: any): Promise<V[]> {
   if (!input) {
-    return [];
+    return Promise.resolve([]);
   }
 
   const isArray = input.length !== undefined;
@@ -99,21 +96,24 @@ export async function mapLimit<V>(input: any, limit: number, iteratee: any): Pro
     ++i;
   }
 
-  const execute = async () => {
-    while (allValues.length > 0) {
-      // tslint:disable-next-line:no-any
-      const [val, index, key] = allValues.pop();
-      results[index] = await iteratee(val, key);
+  const execute = (): Promise<void> => {
+    if (allValues.length === 0) {
+      return Promise.resolve();
     }
+
+    const [val, index, key] = allValues.pop();
+    return new Promise(resolve => resolve(iteratee(val, key))).then(result => {
+      results[index] = result;
+      return execute();
+    });
   };
 
   const allExecutors = [];
   for (let j = 0; j < limit; ++j) {
     allExecutors.push(execute());
   }
-  await Promise.all(allExecutors);
 
-  return results;
+  return Promise.all(allExecutors).then(() => results);
 }
 
 /**
@@ -124,24 +124,24 @@ export async function mapLimit<V>(input: any, limit: number, iteratee: any): Pro
  * @param {AsyncFunction} iteratee - An async function to apply to each item in coll. The iteratee
  *     should complete with the transformed item. Invoked with (item, key).
  */
-export async function mapSeries<T, V>(
+export function mapSeries<T, V>(
   input: readonly T[],
   iteratee: (value: T, index: number) => Promise<V>,
 ): Promise<V[]>;
-export async function mapSeries<T, V>(
+export function mapSeries<T, V>(
   input: readonly T[],
   iteratee: (value: T) => Promise<V>,
 ): Promise<V[]>;
-export async function mapSeries<T extends Object, V>(
+export function mapSeries<T extends Object, V>(
   input: T,
   iteratee: (value: T[keyof T], key: string) => Promise<V>,
 ): Promise<V[]>;
-export async function mapSeries<T extends Object, V>(
+export function mapSeries<T extends Object, V>(
   input: T,
   iteratee: (value: T[keyof T]) => Promise<V>,
 ): Promise<V[]>;
 // tslint:disable-next-line:no-any (types are enforced by overload signatures, validated by tests)
-export async function mapSeries(input: any, iteratee: any): Promise<any[]> {
+export function mapSeries(input: any, iteratee: any): Promise<any[]> {
   return mapLimit(input, 1, iteratee);
 }
 
@@ -152,37 +152,41 @@ export async function mapSeries(input: any, iteratee: any): Promise<any[]> {
  * @param {AsyncFunction} iteratee - An async function to apply to each item in coll. The iteratee
  *     should complete with the transformed item. Invoked with (item, key).
  */
-export async function flatMap<T, V>(
+export function flatMap<T, V>(
   input: readonly T[],
   iteratee: (value: T, index: number) => Promise<V | V[]>,
 ): Promise<V[]>;
-export async function flatMap<T, V>(
+export function flatMap<T, V>(
   input: readonly T[],
   iteratee: (value: T) => Promise<V | V[]>,
 ): Promise<V[]>;
-export async function flatMap<T extends Object, V>(
+export function flatMap<T extends Object, V>(
   input: T,
   iteratee: (value: T[keyof T], key: string) => Promise<V | V[]>,
 ): Promise<V[]>;
-export async function flatMap<T extends Object, V>(
+export function flatMap<T extends Object, V>(
   input: T,
   iteratee: (value: T[keyof T]) => Promise<V | V[]>,
 ): Promise<V[]>;
 // tslint:disable-next-line:no-any (types are enforced by overload signatures, validated by tests)
-export async function flatMap(input: any, iteratee: any): Promise<any[]> {
+export function flatMap(input: any, iteratee: any): Promise<any[]> {
   if (!input) {
-    return [];
+    return Promise.resolve([]);
   }
-  const output = [];
-  const nestedOutput = await map(input, iteratee);
-  for (const partialOutput of nestedOutput) {
-    // tslint:disable-next-line:no-any (could possibly be an array)
-    if (partialOutput && (partialOutput as any).length !== undefined) {
-      // tslint:disable-next-line:no-any (is definitely an array)
-      output.push(...(partialOutput as any));
-    } else {
-      output.push(partialOutput);
-    }
-  }
-  return output;
+
+  return map(input, iteratee).then(nestedOutput => {
+    // tslint:disable-next-line:no-any
+    const output: any[] = [];
+    nestedOutput.forEach(partialOutput => {
+      // tslint:disable-next-line:no-any (could possibly be an array)
+      if (partialOutput && (partialOutput as any).length !== undefined) {
+        // tslint:disable-next-line:no-any (is definitely an array)
+        output.push(...(partialOutput as any));
+      } else {
+        output.push(partialOutput);
+      }
+    });
+
+    return output;
+  });
 }
