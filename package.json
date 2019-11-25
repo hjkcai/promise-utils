@@ -10,9 +10,10 @@
     "url": "https://github.com/hjkcai/promise-utils.git"
   },
   "main": "dist/src/index.js",
+  "module": "dist/promise-utils.js",
   "types": "dist/src/index.d.ts",
   "scripts": {
-    "prepare": "tsc",
+    "prepare": "tsc && rollup -c",
     "prettier:base": "prettier '{src,test}/**/**/*.ts'",
     "prettier": "npm run prettier:base -- --write",
     "lintSrc": "tslint --project tsconfig.json --config tslint.js 'src/**/*.ts'",
@@ -78,6 +79,9 @@
     "lodash": "4.17.14",
     "nyc": "14.1.1",
     "prettier": "1.18.2",
+    "rollup": "^1.27.5",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-typescript2": "^0.25.2",
     "sinon": "7.3.2",
     "tslint": "5.18.0",
     "typedoc": "0.14.2",
