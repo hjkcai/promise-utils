@@ -1,13 +1,13 @@
 {
-  "name": "blend-promise-utils",
+  "name": "blend-promise-utils-es5",
   "version": "1.24.1",
-  "author": "Blend",
+  "author": "hjkcai <huajingkun1214@gmail.com>",
   "license": "MIT",
   "homepage": "https://blend.github.io/promise-utils",
   "description": "Lodash-like utilities for dealing with promises",
   "repository": {
     "type": "git",
-    "url": "https://github.com/blend/promise-utils.git"
+    "url": "https://github.com/hjkcai/promise-utils.git"
   },
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
