@@ -9,7 +9,7 @@
     "pretty": true,
     "noUnusedLocals": true,
     "strict": true,
-    "target": "es2017",
+    "target": "es5",
     "rootDir": ".",
     "outDir": "dist",
     "sourceMap": true,
