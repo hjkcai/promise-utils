@@ -9,7 +9,6 @@ module.exports = {
     'no-magic-numbers': [true, 0, 1, 200, 204, 404, 500, 503, 504],
     'prefer-for-of': true,
     'no-for-in-array': true,
-    'promise-function-async': true,
     'restrict-plus-operands': true,
     typedef: [
       true,
