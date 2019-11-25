@@ -1,3 +1,12 @@
+# blend-promise-utils-es5
+
+This is the ES5 version of the original blend-promise-utils. All tests are passed.
+
+Using this package results in much smaller bundle size compared to the original package because
+no polyfill except Promise is required! Also an ES Module bundle is included.
+
+---
+
 promise-utils
 =============
 
